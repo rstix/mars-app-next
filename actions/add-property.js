@@ -5,7 +5,7 @@ import { getSessionUser } from '@/utils/get-session-user';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-export const addProperty = async (formData) => {
+const addProperty = async (formData) => {
   await connectDB();
 
   const sessionUser = await getSessionUser();
@@ -23,6 +23,7 @@ export const addProperty = async (formData) => {
     .map((image) => image.name);
 
   const propertyData = {
+    owner: userId,
     type: formData.get('type'),
     name: formData.get('name'),
     description: formData.get('description'),
@@ -47,7 +48,6 @@ export const addProperty = async (formData) => {
       phone: formData.get('seller_info.phone'),
     },
     images,
-    owner: userId,
   };
 
   const newProperty = new Property(propertyData);
@@ -57,3 +57,5 @@ export const addProperty = async (formData) => {
 
   redirect(`/properties/${newProperty._id}`);
 };
+
+export default addProperty;
