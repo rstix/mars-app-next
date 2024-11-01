@@ -1,44 +1,69 @@
-'use client';
-import { useState, useEffect } from 'react';
+// 'use client';
+// import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 // import Spinner from '@/components/Spinner';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
 import profileDefault from '@/assets/images/profile.png';
+import ProfileProperties from '@/components/profile-properties';
+import Property from '@/models/Property';
+import connectDB from '@/config/database';
+import { getSessionUser } from '@/utils/get-session-user';
+import { convertToSerializeableObject } from '@/utils/convert-to-object';
 
-const ProfilePage = () => {
-  const { data: session } = useSession();
-  const profileImage = session?.user?.image;
-  const profileName = session?.user?.name;
-  const profileEmail = session?.user?.email;
+const ProfilePage = async () => {
+  // const { data: session } = useSession();
+  // const profileImage = session?.user?.image;
+  // const profileName = session?.user?.name;
+  // const profileEmail = session?.user?.email;
 
-  const [properties, setProperties] = useState([]);
+  await connectDB();
 
-  useEffect(() => {
-    const fetchUserProperties = async (userId) => {
-      if (!userId) {
-        return;
-      }
+  const sessionUser = await getSessionUser();
 
-      try {
-        const res = await fetch(`/api/properties/user/${userId}`);
+  const { userId } = sessionUser;
 
-        if (res.status === 200) {
-          const data = await res.json();
-          setProperties(data);
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
 
-    // Fetch user properties when session is available
-    if (session?.user?.id) {
-      fetchUserProperties(session.user.id);
-    }
-  }, [session]);
+  const propertiesDoc = await Property.find({ owner: userId }).lean();
+  const properties = propertiesDoc.map(convertToSerializeableObject);
+
+  const profileImage = sessionUser?.user?.image;
+  const profileName = sessionUser?.user?.name;
+  const profileEmail = sessionUser?.user?.email;
+
+  // const [properties, setProperties] = useState([]);
+
+  // useEffect(() => {
+  //   const fetchUserProperties = async (userId) => {
+  //     if (!userId) {
+  //       return;
+  //     }
+
+  //     try {
+  //       const res = await fetch(`/api/properties/user/${userId}`);
+
+  //       if (res.status === 200) {
+  //         const data = await res.json();
+  //         setProperties(data);
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     } finally {
+  //       // setLoading(false);
+  //     }
+  //   };
+
+  //   // Fetch user properties when session is available
+  //   if (session?.user?.id) {
+  //     fetchUserProperties(session.user.id);
+  //   }
+  // }, [session]);
+
+  // const properties = await Property.find({ owner: sessionUser.userId }).lean();
+
   return (
     <section className="bg-blue-50">
       <div className="container m-auto py-24">
@@ -65,6 +90,18 @@ const ProfilePage = () => {
 
             <div className="md:w-3/4 md:pl-4">
               <h2 className="text-xl font-semibold mb-4">Your Listings</h2>
+              {/* {properties.length ? (
+                <div>oh</div> // <Spinner loading={loading} />
+              ) : (
+                <ProfileProperties properties={properties} />
+              )} */}
+
+              {properties.length === 0 ? (
+                <p>You have no property listings</p>
+              ) : (
+                <ProfileProperties properties={properties} />
+              )}
+
               {/* {!loading && properties.length === 0 && (
                 <p>You have no property listings</p>
               )} */}
