@@ -23,6 +23,22 @@ const deleteProperty = async (propertyID) => {
   if (property.owner.toString() !== userId) {
     throw new Error('unauthorized');
   }
+
+  // exctract public ID from image URLs
+  const publicIds = property.images.map((imageUrl) => {
+    const parts = imageUrl.split('/');
+    return parts.at(-1).split('.').at(0);
+  });
+
+  if (publicIds.length > 0) {
+    for (let publicId of publicIds) {
+      await cloudinary.uploader.destroy('propertypulse/' + publicId);
+    }
+  }
+
+  await property.deleteOne();
+
+  revalidatePath('/', 'layout');
 };
 
 export default deleteProperty;
